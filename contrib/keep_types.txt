@@ -1,0 +1,26 @@
+# This is user-contributed code.  It is unsupported.
+
+# Usage:
+#
+#    keep_types(MAIL_OBJ, qw(text/plain text/html ...))
+#
+# Give this function a MIME::Entity.
+# It will keep parts with the specified effective types, and remove others. 
+# From Mike Pastore (mpastore@coreorg.com):
+#
+sub keep_types {
+    my $entity = shift;
+    return $entity->parts unless @_ and $entity->is_mime;
+    my %accept = map { $_ => 1 } @_;
+
+    # Find intersection of accepted types and effective types
+    my @keep =
+      map $_->[0],
+      grep $accept{$_->[1]},
+      map [ $_, $_->effective_type ],
+      $entity->parts;
+
+    # See MIME::Entity documentation.
+    $entity->parts(\@keep);
+}
+

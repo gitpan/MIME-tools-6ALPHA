@@ -1,0 +1,220 @@
+=head1 NAME
+
+MIME::Tools::primer - introduction to basic MIME concepts
+
+
+
+=head1 SYNOPSIS
+
+This is part of the MIME-tools documentation.
+See L<MIME::Tools> for the full table of contents.
+
+
+
+=head1 DESCRIPTION
+
+So you need to parse (or create) MIME, but you're not quite up on
+the specifics?  No problem.  Read on...
+
+
+
+=head2 A MIME glossary
+
+Here are some definitions adapted from RFC-1521 explaining the terminology
+we use; each is accompanied by the equivalent in MIME:: module terms.
+
+Start with the L<"entity"|/entity> entry.
+
+=over 4
+
+
+=item attachment
+
+An "attachment" is common slang for any part of a multipart message --
+except, perhaps, for the first part, which normally carries a user
+message describing the attachments that follow (e.g.: "Hey dude, here's
+that GIF file I promised you.").
+
+In the MIME-tools system, an attachment is just a B<MIME::Entity> 
+stored in the L<parts|MIME::Entity/parts> list of the entity it
+is "attached" to.
+
+See L<MIME::Entity/parts()> for more details.
+
+
+=item body
+
+The "body" of an L<entity|/entity> is that portion of the entity
+which follows the L<header|/header> and which contains the real message
+content.  For example, if your MIME message has a GIF file attachment,
+then the body of that attachment is the base64-encoded GIF file itself.
+
+In the MIME-tools system, a body is represented by an instance of 
+B<MIME::Body>.  You get the body of an entity by invoking the
+L<bodyhandle()|MIME::Entity/bodyhandle> method.
+
+See L<MIME::Body> for more details.
+
+
+=item body part
+
+One of the parts in the body of a L<multipart|/multipart> L<multipart|/entity>.
+This term just accentuates the fact that the entity in question 
+was contained inside a multipart entity.
+
+In the MIME-tools system, a body part is represented by an 
+instance of B<MIME::Entity>, just like any other entity.
+
+See L<MIME::Entity> for more details.
+
+
+=item entity
+
+An "entity" is the most important thing in the MIME universe:
+basically, it's just a blob of data (such as a single text or image file)
+which is accompanied by ancillary information about that data -- 
+the data's content-type (e.g., "text/plain", "image/gif"),
+a recommended filename to use when storing the data, etc.
+
+The I<whole point of the MIME standard> is to define how entities
+are represented when they travel through email.  Roughly speaking,
+all entities (even images) are commonly encoded as ASCII text:
+the ancillary information comes first, then a blank line, then 
+the encoded data.  
+
+For this reason, we refer to the ancillary-information portion 
+as the L<header|/header>, and the encoded-data portion as 
+the L<body|/body>.  All entities have a header and a body.
+
+In the MIME-tools system, an entity is represented by an instance 
+of B<MIME::Entity>.  The entity's header is represented by an
+instance of B<MIME::Head>.  If the entity contains simple data,
+then the body is represented by an instance of B<MIME::Body>;
+if, however, it is a special type of "multipart" entity which 
+just contains other entities, then it will have no body object
+but a list of "parts" instead. 
+
+See L<MIME::Entity>, L<MIME::Head>, and L<MIME::Body>
+for more details.
+
+
+=item header
+
+This is the top portion of the MIME message, which contains the
+"Content-type", "Content-transfer-encoding", etc.  
+Every MIME entity has a header.
+
+In the MIME-tools system, a header is represented by an instance 
+of B<MIME::Head>.  You get the header of an entity by invoking
+the L<head()|MIME::Entity/head> method.
+
+See L<MIME::Head> for more details.
+
+
+=item message
+
+A "message" generally means the complete (or "top-level") message being
+transferred on a network; e.g., an email message.
+
+In the MIME-tools system, messages are what we parse from 
+filehandles to obtain MIME::Entity objects.
+
+
+=back
+
+
+
+=head2 Content types
+
+This indicates what kind of data is in the MIME message, usually
+as I<majortype/minortype>.  The standard major types are shown below.
+A more-comprehensive listing may be found in RFC-2046.
+
+=over 4
+
+=item application
+
+Data which does not fit in any of the other categories, particularly
+data to be processed by some type of application program.
+C<application/octet-stream>, C<application/gzip>, C<application/postscript>...
+
+=item audio
+
+Audio data.
+C<audio/basic>...
+
+=item image
+
+Graphics data.
+C<image/gif>, C<image/jpeg>...
+
+=item message
+
+A message, usually another mail or MIME message.
+C<message/rfc822>...
+
+=item multipart
+
+A message containing other messages.
+C<multipart/mixed>, C<multipart/alternative>...
+
+=item text
+
+Textual data, meant for humans to read.
+C<text/plain>, C<text/html>...
+
+=item video
+
+Video or video+audio data.
+C<video/mpeg>...
+
+=back
+
+
+=head2 Content transfer encodings
+
+This is how the message body is packaged up for safe transit.
+There are the 5 major MIME encodings.
+A more-comprehensive listing may be found in RFC-2045.
+
+=over 4
+
+=item 7bit
+
+No encoding is done at all.  This label simply asserts that no
+8-bit characters are present, and that lines do not exceed 1000 characters
+in length (including the CRLF).
+
+=item 8bit
+
+No encoding is done at all.  This label simply asserts that the message
+might contain 8-bit characters, and that lines do not exceed 1000 characters
+in length (including the CRLF).
+
+=item binary
+
+No encoding is done at all.  This label simply asserts that the message
+might contain 8-bit characters, and that lines may exceed 1000 characters
+in length.  Such messages are the I<least> likely to get through mail
+gateways.
+
+=item base64
+
+A standard encoding, which maps arbitrary binary data to the 7bit domain.
+Like "uuencode", but very well-defined.  This is how you should send
+essentially binary information (tar files, GIFs, JPEGs, etc.).
+
+=item quoted-printable
+
+A standard encoding, which maps arbitrary line-oriented data to the
+7bit domain.  Useful for encoding messages which are textual in
+nature, yet which contain non-ASCII characters (e.g., Latin-1,
+Latin-2, or any other 8-bit alphabet).
+
+=back
+
+
+=head1 SEE ALSO
+
+See L<MIME::Tools/SYNOPSIS> for the full table of contents.
+

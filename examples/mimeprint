@@ -1,0 +1,125 @@
+#!/usr/bin/perl -w
+
+=head1 NAME
+
+mimeprint - parse a MIME stream, and print the parsed entity
+
+
+=head1 SYNOPSIS
+
+    mimeprint [-options] (infile|-)
+
+Options for help:    
+
+    -help       Output help
+    -man        Output manpage
+
+Options to control parsing:
+
+    -extract-nested          Extract nested messages using NEST
+    -extract-uuencode        Extract embedded uuencode
+    -replace-nested          Extract nested messages using REPLACE    
+
+Options to control output:
+
+    -dir DIR                 Output parts to disk under this directory
+    -encode ENCODING         Re-encode top-level entity (if not multipart)
+    -skeleton                Just print the skeleton (default prints all)
+
+Toolkit configuration:
+
+    -debug                   Turn debugging on.
+    -quiet                   Quiet warnings.
+
+
+
+=head1 DESCRIPTION
+
+Parse a MIME stream, and output the resulting entity.  This is
+a nice way of eyeballing whether or not MIME-tools "understood"
+your MIME message.
+
+Due to nonuniqueness of MIME encodings, there is a very good chance
+that your output will not I<exactly> resemble your input.    
+
+
+=head1 AUTHOR
+
+Eryq, eryq@zeegee.com
+
+=cut
+
+use lib "lib";
+use strict;
+use Getopt::Long;
+use Pod::Usage;
+use MIME::Parser;
+
+#### Options:
+my $Help;
+my $Man;
+my $Dir;
+my $Encoding;
+my $Skeleton;
+my $DecodeHeaders;
+my $ExtractNested;
+my $ReplaceNested;
+my $ExtractUuencode;
+
+#------------------------------
+
+sub main {
+
+    ### Usage?
+    GetOptions(
+	       "help" => \$Help,
+	       "man"  => \$Man,
+
+	       "decode-headers"   => \$DecodeHeaders,
+	       "dir=s"            => \$Dir,
+	       "encode=s"         => \$Encoding,
+	       "extract-nested"   => \$ExtractNested,
+	       "extract-uuencode" => \$ExtractUuencode,
+	       "replace-nested"   => \$ReplaceNested,
+	       "skeleton"         => \$Skeleton,
+	       "debug"            => sub { MIME::Tools->debugging(1); },
+	       "quiet"            => sub { MIME::Tools->quiet(1); },
+	       ) or pod2usage(2);
+    pod2usage(1) if !@ARGV;
+    pod2usage(1) if $Help;
+    pod2usage(-verbose=>2, -exitstatus=>0) if $Man;
+
+    ### Set up parser:
+    my $parser = new MIME::Parser;
+    if ($Dir) {
+	$parser->output_to_core(0);
+	$parser->output_under($Dir);
+    }
+    else {
+	$parser->output_to_core('ALL');
+    }
+    $parser->decode_headers($DecodeHeaders);
+    $parser->extract_nested_messages(1)         if $ExtractNested;
+    $parser->extract_nested_messages('REPLACE') if $ReplaceNested;
+    $parser->extract_uuencode($ExtractUuencode);
+    $parser->ignore_errors(1);
+
+    ### Parse:
+    my $ent = $parser->parse_open($ARGV[0]);
+    $ent or die "MIME parsing failed!\n";
+
+    print STDERR "============================== BEGIN LOG\n";
+    print STDERR $parser->results->msgs, "\n";
+    print STDERR "============================== END LOG\n";
+
+    if ($Encoding and !$ent->is_multipart) {
+	supported MIME::Decoder $Encoding or
+	    die "unsupported encoding: $Encoding\n";
+	$ent->head->mime_attr("Content-transfer-encoding" => $Encoding);
+    }
+    ($Skeleton ? $ent->dump_skeleton(\*STDOUT) : $ent->print(\*STDOUT));
+}
+
+$SIG{__WARN__} = sub { print STDERR "mimeprint: $_[0]" };
+exit (&main ? 0 : 1);
+1;

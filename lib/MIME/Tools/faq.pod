@@ -1,0 +1,27 @@
+=head1 NAME
+
+MIME::Tools::faq - frequently-asked MIME-tools questions
+
+
+=head1 SYNOPSIS
+
+This is part of the MIME-tools documentation.
+See L<MIME::Tools> for the full table of contents.
+
+
+=head1 DESCRIPTION
+
+
+=head2 How do I get the MIME type of an entity?
+
+{discuss effective vs. actual content type: example, message/digest}
+
+
+
+
+
+
+=head1 SEE ALSO
+
+See L<MIME::Tools/SYNOPSIS> for the full table of contents.
+

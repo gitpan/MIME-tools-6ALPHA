@@ -1,0 +1,125 @@
+=head1 NAME
+
+MIME::Tools::tips - words of wisdom for users of MIME-tools
+
+
+=head1 SYNOPSIS
+
+This is part of the MIME-tools documentation.
+See L<MIME::Tools> for the full table of contents.
+
+
+=head1 DESCRIPTION
+
+Here is all the good advice I have to give, conveniently collected
+into one easy-to-ignore place.  :-)
+
+
+=head2 Take a look at the examples
+
+The MIME-Tools distribution comes with an "examples" directory.
+The scripts in there are basically just tossed-together, but
+they'll give you some ideas of how to use the parser.
+
+
+=head2 Run with warnings enabled
+
+I<Always> run your Perl script with C<-w>.
+If you see a warning about a deprecated method, change your
+code ASAP.  This will ease upgrades tremendously.
+
+
+=head2 Avoid non-standard encodings
+
+Don't try to MIME-encode using the non-standard MIME encodings.
+It's just not a good practice if you want people to be able to
+read your messages.
+
+
+=head2 Plan for thrown exceptions
+
+For example, if your mail-handling code absolutely must not die,
+then perform mail parsing like this:
+
+    $entity = eval { $parser->parse(\*INPUT) };
+
+Parsing is a complex process, and some components may throw exceptions
+if seriously-bad things happen.  Since "seriously-bad" is in the
+eye of the beholder, you're better off I<catching> possible exceptions
+instead of asking me to propagate C<undef> up the stack.  Use of exceptions in
+reusable modules is one of those religious issues we're never all
+going to agree upon; thankfully, that's what C<eval{}> is good for.
+
+
+=head2 Check the parser results for warnings/errors
+
+As of 5.3xx, the parser tries extremely hard to give you a
+MIME::Entity.  If there were any problems, it logs warnings/errors
+to the underlying "results" object (see L<MIME::Parser::Results>).
+Look at that object after each parse.
+Print out the warnings and errors, I<especially> if messages don't
+parse the way you thought they would.
+
+
+=head2 Don't plan on printing exactly what you parsed!
+
+I<Parsing is a (slightly) lossy operation.>
+Because of things like ambiguities in base64-encoding, the following
+is I<not> going to spit out its input unchanged in all cases:
+
+    $entity = $parser->parse(\*STDIN);
+    $entity->print(\*STDOUT);
+
+If you're using MIME::Tools to process email, remember to save
+the data you parse if you want to send it on unchanged.
+This is vital for things like PGP-signed email.
+
+(Sing it with me, kids: I<you can't / always print / what you paaaarsed...>)
+
+
+
+=head2 Understand how international characters are represented
+
+The MIME standard allows for text strings in headers to contain
+characters from any character set, by using special sequences
+which look like this:
+
+    =?ISO-8859-1?Q?Keld_J=F8rn_Simonsen?=
+
+To be consistent with the existing Mail::Field classes, MIME::Tools
+does I<not> automatically unencode these strings, since doing so would
+lose the character-set information and interfere with the parsing
+of fields (see L<MIME::Parser/decode_headers> for a full explanation).
+That means you should be prepared to deal with these encoded strings.
+
+The most common question then is, B<how do I decode these encoded strings?>
+The answer depends on what you want to decode them I<to>:
+ASCII, Latin1, UTF-8, etc.  Be aware that your "target" representation
+may not support all possible character sets you might encounter;
+for example, Latin1 (ISO-8859-1) has no way of representing Big5
+(Chinese) characters.  A common practice is to represent "untranslateable"
+characters as "?"s, or to ignore them completely.
+
+To unencode the strings into some of the more-popular Western byte
+representations (e.g., Latin1, Latin2, etc.), you can use the decoders
+in MIME::WordDecoder (see L<MIME::WordDecoder>).
+The simplest way is by using C<unmime()>, a function wrapped
+around your "default" decoder, as follows:
+
+    use MIME::WordDecoder;
+    ...
+    $subject = unmime $entity->head->get('subject');
+
+One place this I<is> done automatically is in extracting the recommended
+filename for a part while parsing.  That's why you should start by
+setting up the best "default" decoder if the default target of Latin1
+isn't to your liking.
+
+
+
+
+=head1 SEE ALSO
+
+See L<MIME::Tools/SYNOPSIS> for the full table of contents.
+
+

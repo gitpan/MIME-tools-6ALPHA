@@ -1,0 +1,163 @@
+=head1 NAME
+
+MIME::Tools::diag - diagnostics for MIME-tools
+
+
+=head1 SYNOPSIS
+
+This is part of the MIME-tools documentation.
+See L<MIME::Tools> for the full table of contents.
+
+
+=head1 DESCRIPTION
+
+This document describes how the toolkit reports unusual
+situations, and how you can hear (or suppress) what it has to say.
+
+
+
+=head2 Message logging
+
+MIME-tools is a large and complex toolkit which tries to deal with
+a wide variety of external input.  It's sometimes helpful to see
+what's really going on behind the scenes.
+
+Version 6 funnels all message logging through a single
+global object, B<$MIME::Tools::LOG>.  This object has methods
+for dispatching messages of various types: debug, warning, and error.
+
+When a B<MIME::Parser> begins a parse it local'izes this global,
+replacing it with an instance of B<MIME::Parser::Results>.  
+This causes all MIME::Tools messages to be diverted into the
+results trace-log, which can be examined for problems after the parse.
+See L<MIME::Parser::Results> for more details.
+
+
+=head2 Kinds of messages
+
+There are several kinds of messages logged by the toolkit
+
+=over 4
+
+=item Debug messages
+
+These are printed directly to the STDERR, with a prefix of
+C<"MIME-tools: debug">.
+
+Debug message are only logged if you have turned
+C<debugging> on in the MIME::Tools configuration.
+See L<MIME::Tools/debugging>.
+
+
+=item Warning messages
+
+These are logged by the standard Perl warn() mechanism
+to indicate an unusual situation.
+They all have a prefix of C<"MIME-tools: warning">.
+
+Warning messages are only logged if C<$^W> is set true
+and MIME::Tools is not configured to be C<quiet>.
+See L<MIME::Tools/quiet>.
+
+
+=item Error messages
+
+These are logged by the standard Perl warn() mechanism
+to indicate that something actually failed.
+They all have a prefix of C<"MIME-tools: error">.
+
+Error messages are only logged if C<$^W> is set true
+and MIME::Tools is not configured to be C<quiet>.
+See L<MIME::Tools/quiet>.
+
+=back
+
+
+
+=head2 Situational warnings
+
+These are warnings about unexpected things which are nonfatal;
+e.g., creating a directory which should be there but isn't.
+They are logged in the simplest way possible:
+
+   warn "{description of the problem}\n"
+
+Situational warnings are only logged if C<$^W> is set true and
+MIME::Tools is not configured to be L</quiet>.
+
+
+
+=head2 Situational errors
+
+These are exceptions thrown when something bad happens; e.g.,
+failure to open a file.
+They are thrown in the simplest way possible:
+
+   die "{description of the problem}\n"
+
+
+
+=head2 Usage warnings
+
+If you invoke a deprecated MIME-tools method, or construct
+an instance of a deprecated MIME-tools class, or otherwise
+ask for something that I think is unwise or will soon be
+unsupported, it will result in a warning logged via C<Carp::carp>,
+like this:
+
+   carp "MIME-tools: usage: {description of the problem}
+
+See L<Carp/carp> for more details.
+
+Usage warnings are only logged if C<$^W> is set true and
+MIME::Tools is not configured to be L</quiet>.
+
+
+
+=head2 Usage errors
+
+If you invoke a MIME-tools method improperly, it will result
+in an exception thrown via C<Carp::croak>, like this:
+
+    croak "MIME-tools: usage: {description of the problem}"
+
+See L<Carp/croak> for more details.
+
+B<Note:> such exceptions will be thrown from a MIME::Parser
+I<even if> that parser has been configured to "ignore errors".
+The only "errors" ignored are errors in the message data...
+I<not> errors in the code itself.
+
+
+
+=head2 Internal logic errors
+
+If an internal logic error is discovered, it will always result
+in an exception thrown via C<Carp::confess>, like this:
+
+    confess "MIME-tools: internal: {description of the problem}"
+
+The stack backtrace will aid in the debugging and repair of MIME-tools.
+See L<Carp/confess> for more details.
+
+B<Note:> such exceptions will be thrown from a MIME::Parser
+I<even if> that parser has been configured to "ignore errors".
+The only "errors" ignored are errors in the message data...
+I<not> errors in the code itself.
+
+
+
+=head2 Component error handling
+
+MIME-tools makes use of a number of externally-provided modules
+(Mail::Internet, MIME::Base64, etc.), each of which may have its own
+conventions for issuing warnings and throwing exceptions.
+MIME-tools does I<not> attempt to mask or interfere with these
+mechanisms in any way.
+
+
+
+=head1 SEE ALSO
+
+See L<MIME::Tools/SYNOPSIS> for the full table of contents.
+
